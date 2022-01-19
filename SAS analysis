@@ -1,0 +1,475 @@
+# ***************** DATA ANALYSIS IN SAS **************************** ----------------------------
+# Article:      Nematode Community-Based Soil Food Web Analysis of Ferralsol, Lithosol and Nitosol Soil Groups in Ghana, Kenya and Malawi Reveals Distinct Soil Health Degradations
+# Authors:      Haddish Melakeberhan, ZinThuZar Maung, Isaac Lartey, Senol Yildiz, Jenni Gronseth, Jiaguo Qi, George N. Karuku, John W. Kimenju, Charles Kwoseh and Thomas Adjei-Gyapong
+# Affiliation:  Michigan State University
+# Journal:      Diversity (MDPI)
+# Date:         2021
+# ******************************************************************** ----------------------------
+ 
+ 
+ 
+ 
+ 
+                                     /****************** FIGURE 1 (GHANA, MALAWI, KENYA) **** Soil food web Model  ***************************/
+/*Part I. Input Data into SAS*/ 
+
+proc print data=ALL_HGBF;
+run;
+
+/****** Part II Modeling & Graphing ******/
+
+/*** Part A. Mixed Modeling for SI & EI ******/
+
+proc glimmix data=ALL_HGBF plots=residualpanel; /*SI Model*/
+class RG SG	LS FD Co;
+model SI=LS|RG|Co|SG;
+random FD(LS SG RG) FD*Co(LS SG RG); /*field is the experimental unit*/
+lsmeans LS*SG*CO/LINES;
+ods output lsmeans=mymean_SI;
+run;
+proc print data=mymean_SI;  
+run;
+
+proc glimmix data=ALL_HGBF plots=residualpanel; /*EI Model*/
+class RG SG	LS FD Co;
+model EI=LS|RG|Co|SG;
+random FD(LS SG RG) FD*Co(LS SG RG); /*field is the experimental unit*/
+lsmeans LS*SG*CO/LINES;
+ods output lsmeans=mymean_EI;
+run;
+proc print data=mymean_EI;  
+run;
+
+
+/*** Part B. Prepare Data for Plotting ******/
+
+data mymean_EI_1;
+set mymean_EI;
+rename Estimate=EI_Est StdErr=EI_SE;
+run;
+proc print; 
+run;
+
+data mymean_SI_1;
+set mymean_SI;
+rename Estimate=SI_Est StdErr=SI_SE;
+run;
+proc print; 
+run;
+
+/*Merge both EI and SI together*/
+
+data mymean_EISI;
+set mymean_EI_1;
+set mymean_SI_1;
+run;
+proc print data=mymean_EISI; 
+run;	
+
+data mymean_EISI_1;  /*add variable labels in the merged data set*/
+set mymean_EISI;
+/*treatmet,planting time, year, 	soil group*/
+
+if Co=1 then Co1='GHANA';
+if Co=2 then Co1='KENYA';
+if Co=3 then Co1='MALAWI';
+if Co=1 then Co1='GHANA';
+if Co=2 then Co1='KENYA';
+if Co=3 then Co1='MALAWI';
+if Co=1 then Co1='GHANA';
+if Co=2 then Co1='KENYA';
+if Co=3 then Co1='MALAWI';
+if Co=1 then Co1='GHANA';
+if Co=2 then Co1='KENYA';
+if Co=3 then Co1='MALAWI';
+if Co=1 then Co1='GHANA';
+if Co=2 then Co1='KENYA';
+if Co=3 then Co1='MALAWI';
+if Co=1 then Co1='GHANA';
+if Co=2 then Co1='KENYA';
+if Co=3 then Co1='MALAWI';
+
+if LS=1 then LS1='UNDISTURBED';
+if LS=1 then LS1='UNDISTURBED';
+if LS=1 then LS1='UNDISTURBED';
+if LS=2 then LS1='DISTURBED';
+if LS=2 then LS1='DISTURBED';
+if LS=2 then LS1='DISTURBED';
+if LS=1 then LS1='UNDISTURBED';
+if LS=1 then LS1='UNDISTURBED';
+if LS=1 then LS1='UNDISTURBED';
+if LS=2 then LS1='DISTURBED';
+if LS=2 then LS1='DISTURBED';
+if LS=2 then LS1='DISTURBED';
+if LS=1 then LS1='UNDISTURBED';
+if LS=1 then LS1='UNDISTURBED';
+if LS=1 then LS1='UNDISTURBED';
+if LS=2 then LS1='DISTURBED';
+if LS=2 then LS1='DISTURBED';
+if LS=2 then LS1='DISTURBED';
+
+if SG=1 then SG1='FERRASOLS';
+if SG=1 then SG1='FERRASOLS';
+if SG=1 then SG1='FERRASOLS';
+if SG=1 then SG1='FERRASOLS';
+if SG=1 then SG1='FERRASOLS';
+if SG=1 then SG1='FERRASOLS';
+if SG=2 then SG1='LITHOSOLS';
+if SG=2 then SG1='LITHOSOLS';
+if SG=2 then SG1='LITHOSOLS';
+if SG=2 then SG1='LITHOSOLS';
+if SG=2 then SG1='LITHOSOLS';
+if SG=2 then SG1='LITHOSOLS';
+if SG=3 then SG1='NITOSOLS';
+if SG=3 then SG1='NITOSOLS';
+if SG=3 then SG1='NITOSOLS';
+if SG=3 then SG1='NITOSOLS';
+if SG=3 then SG1='NITOSOLS';
+if SG=3 then SG1='NITOSOLS';
+
+
+
+
+xl=SI_Est-(SI_SE);  /*create lower-limit error bars for x-axis*/
+xu=SI_Est+(SI_SE);  /*create upper-limit error bars for x-axis*/
+yl=EI_Est-(EI_SE);   /*create lower-limit error bars for y-axis*/
+yu=EI_Est+(EI_SE);   /*create upper-limit error bars for y-axis*/
+run;
+proc print data=mymean_EISI_1;
+run;
+
+
+/*Final Stage. Plot both SI_x and EI_y */
+
+ods graphics/reset=all;
+ods graphics/height=10in attrpriority=none border=off;
+ods html style=journal image_dpi=300; /*10" & 7.5"*/
+proc sgpanel data=mymean_EISI_1; /*noautolegend*/;
+panelby LS1 SG1 / layout=lattice  SORT=data 
+novarname onepanel colheaderpos=top HEADERATTRS=(Color=Black Family='Times Roman'  Size=12 Weight=Normal);
+refline 50 / axis=x lineattrs=(thickness=2 pattern=shortdash);
+refline 50 / axis=y lineattrs=(thickness=2 pattern=shortdash);
+
+STYLEATTRS DATACONTRASTCOLORS=(black)
+DATASYMBOLS=(CIRCLE TRIANGLE DIAMOND)
+DATALINEPATTERNS=(SOLID shortdash);
+
+/*series Y=EI_Est X=ST/ GROUP=TIME;*/
+scatter Y=EI_Est X=SI_Est/ 
+YERRORLOWER=yl YERRORUPPER=yu XERRORLOWER=xl XERRORUPPER=xu  Errorbarattrs=(pattern=1 thickness=0.2pct) GROUP=Co1 MARKERATTRS=(SIZE=16);
+
+rowaxis LABEL = 'LS-MEANS/100CM3 OF SOIL'  GRID
+LABELATTRS=(Color=Black Family='Times Roman'  Size=12 Weight=Normal)
+VALUEATTRS=(Color=Black Family='Times Roman' Size=10  ) VALUES = (0 TO 100 BY 50);
+
+colaxis LABEL = 'COUNTRY' grid
+LABELATTRS=(Color=Black Family='Times Roman'  Size=12 Weight=Normal)
+VALUEATTRS=(Color=Black Family='Times Roman' Size=10) VALUES = (0 TO 100 BY 50); 
+run;
+
+
+
+
+
+                                                        
+                                                   /************************* TABLE 2 (GHANA) *******************************/																																																																																														
+/*HV*/
+
+proc glimmix data=GHANA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lHV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*BV*/
+proc glimmix data=GHANA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lBV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*FV*/
+proc glimmix data=GHANA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lFV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*PR*/
+proc glimmix data=GHANA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lPR=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+/*OV*/
+proc glimmix data=GHANA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lOV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+/*SUM*/
+proc glimmix data=GHANA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lSUM=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*H*/
+proc glimmix data=GHANA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model H=LS|RG|SG;
+random FD(LS SG RG ); /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*N1*/
+proc glimmix data=GHANA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model N1=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+
+ 
+
+
+
+
+
+                                     
+
+
+
+                                                   /****************** TABLE 2 (MALAWI) *************************/																																																																																															
+/*HV*/
+
+proc glimmix data=MALAWI_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lHV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*BV*/
+proc glimmix data=MALAWI_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lBV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*FV*/
+proc glimmix data=MALAWI_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lFV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+/*PR*/
+proc glimmix data=MALAWI_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lPR=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+/*OV*/
+proc glimmix data=MALAWI_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lOV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+/*SUM*/
+proc glimmix data=MALAWI_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lSUM=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*H*/
+proc glimmix data=MALAWI_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model H=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*N1*/
+proc glimmix data=MALAWI_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model N1=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+
+
+
+                                            /****************** TABLE 2 (KENYA) ***************************/																																																																																													
+/*HV*/
+
+proc glimmix data=KENYA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lHV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*BV*/
+proc glimmix data=KENYA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lBV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*FV*/
+proc glimmix data=KENYA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lFV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*PR*/
+proc glimmix data=KENYA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lPR=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+/*OV*/
+proc glimmix data=KENYA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lOV=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+/*SUM*/
+proc glimmix data=KENYA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model lSUM=LS|RG|SG;
+random FD(LS SG RG ) ; /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*H*/
+proc glimmix data=KENYA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model H=LS|RG|SG;
+random FD(LS SG RG ); /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+/*N1*/
+proc glimmix data=KENYA_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model N1=LS|RG|SG;
+random FD(LS SG RG ); /*field is the experimental unit*/
+lsmeans SG/lines;
+lsmeans RG/lines;
+lsmeans LS/lines;
+run;
+
+
+
+                                     /****************** TABLE 3 (GHANA, MALAWI, KENYA) **** Soil food web indices ***************************/
+
+/*FOODWEB INDICES*/
+/*EI*/
+proc glimmix data=ALL_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model EI=LS|RG|Co|SG;
+random FD(LS SG RG ) FD*Co(LS SG RG); /*field is the experimental unit*/
+lsmeans SG*LS*Co;
+lsmeans SG*LS*Co/slice=(sg ls) lines;
+run;
+
+/*SI*/
+proc glimmix data=ALL_HGBF plots=residualpanel;
+class RG SG	LS FD Co;
+model SI=LS|RG|Co|SG;
+random FD(LS SG RG ) FD*Co(LS SG RG); /*field is the experimental unit*/
+lsmeans SG*LS*Co;
+run;
+
+
+
+
